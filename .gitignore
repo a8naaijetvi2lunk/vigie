@@ -1,0 +1,35 @@
+# Journaux
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dépendances et builds front
+node_modules
+dist
+dist-ssr
+*.local
+
+# Éditeurs et système
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.suo
+*.sw?
+
+# Build Rust / Tauri (reconstruit par cargo)
+src-tauri/target/
+
+# Données locales : ne jamais versionner
+*.db
+*.sqlite
+config.json
+.env
+.env.*
+
+# Paquets de distribution
+/release/

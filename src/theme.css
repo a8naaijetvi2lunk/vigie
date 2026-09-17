@@ -1,0 +1,232 @@
+/* ============================================================
+   VIGIE — theme.css
+   Direction : "Altimètre Éditorial"
+   Base : crème, encre, terracotta, vert forêt
+   + tokens dérivés (seuils, stale, barres, heatmap)
+   ============================================================ */
+
+:root {
+  /* ---------- Palette de base ---------- */
+  --bg:        #F5F1EA;  /* ivoire — fond unique du widget compact */
+  --surface:   #ECE6DB;  /* sable — heatmap/hover (mode étendu), aussi utilisé côté sessions */
+  --ink:       #1A1A1A;  /* encre — grandes valeurs, texte principal */
+  --mute:      #6B6359;  /* gris chaud — méta, labels, état stale */
+  --line:      #D9D2C4;  /* filets 1px, piste des barres, bordure fenêtre */
+  --accent:    #C75D3A;  /* terracotta — kickers, "//", seuil warning */
+  --accent-2:  #2A4A3A;  /* vert forêt — seuil normal, pastille active */
+
+  /* ---------- Typographie ---------- */
+  --font-sans:    "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --font-hand:    "Caveat", cursive;
+
+  /* ---------- Tokens dérivés : seuils de quota ---------- */
+  /* Normal < 70% — le panneau reste calme, le vert ne vit que dans la barre */
+  --state-ok:   var(--accent-2);
+  /* Warning 70–90% — barre + countdown basculent terracotta */
+  --state-warn: var(--accent);
+  /* Critique > 90% — rouge brique CHAUD dérivé de la terracotta, token
+     additionnel (hors palette de base).
+     Contraste sur ivoire : ~5.5:1 (AA texte normal). Jamais de rouge froid. */
+  --state-crit: #A93B26;
+
+  /* ---------- Tokens dérivés : données périmées ---------- */
+  --stale-fg:            var(--mute);  /* chiffres, countdown, stamp "# il y a Xmin" */
+  --stale-bar-opacity:   0.35;         /* remplissages de barres dévitalisés */
+  --stale-block-opacity: 0.8;          /* bande provider entière, légère mise en retrait */
+
+  /* ---------- Barres de quota (fines, éditoriales) ---------- */
+  --bar-track:       var(--line);
+  --bar-h:           3px;   /* barre 5h (principale) */
+  --bar-h-crit:      4px;   /* épaississement en critique */
+  --bar-h-secondary: 2px;   /* micro-barre hebdo */
+  --bar-tick:        var(--mute);  /* encoches gravées à 70% et 90% (opacité 0.5 à l'usage) */
+
+  /* ---------- Pastille statut agent ---------- */
+  --dot-active: var(--accent-2); /* ● actif — pulse lent, 60→100% opacité */
+  --dot-idle:   var(--mute);     /* ○ idle — contour 1px, pas de remplissage */
+
+  /* ---------- Heatmap 30 j (rampe chaude, intensité ≠ statut → pas de vert) ---------- */
+  --heat-0: var(--surface);    /* jour vide / très faible */
+  --heat-1: #E5CBB9;           /* sable soutenu */
+  --heat-2: #D9A384;           /* terracotta clair */
+  --heat-3: var(--accent);     /* terracotta plein */
+  --heat-4: var(--state-crit); /* jours extrêmes */
+
+  /* ---------- Sparkline 24 h ---------- */
+  --spark-stroke: var(--ink);    /* trait 1.5px, sans aire — enregistreur, pas graphe SaaS */
+  --spark-dot:    var(--accent); /* unique point : valeur courante */
+  --spark-base:   var(--line);   /* ligne de base hairline */
+
+  /* ---------- Géométrie ---------- */
+  --radius-sm:   12px;  /* petits éléments (HUD, réglages) */
+  --radius-md:   16px;  /* fenêtre compact/étendu */
+  --radius-pill: 999px; /* drag-handle, toggles (Settings) */
+
+  /* ---------- Espacements ---------- */
+  --sp-1: 2px;  --sp-2: 4px;  --sp-3: 8px;
+  --sp-4: 12px; --sp-5: 16px; --sp-6: 24px;
+  --pad-window-x: 14px;  /* padding horizontal fenêtre compact */
+  --pad-window-y: 10px;  /* padding vertical fenêtre compact */
+
+  /* ---------- Échelle typo (compact) ---------- */
+  --fs-display:    36px; /* grand % 5h — Inter Tight 600, tabular-nums */
+  --fs-unit:       16px; /* le signe % accolé, en --mute */
+  --fs-countdown:  11px; /* "reset 2h14" mono, même baseline que le % */
+  --fs-prefix:     10px; /* "$ claude" mono */
+  --fs-kicker:     9px;  /* "01 · 5H" / "[ 01 ] //" mono uppercase */
+  --fs-micro:      9px;  /* ligne hebdo, méta */
+  /* Échelle typo (étendu) */
+  --fs-display-exp: 56px;
+  --fs-title-exp:   14px; /* titres de section, Inter Tight ITALIC */
+
+  /* ---------- Signatures ---------- */
+  --kicker-ls:   0.1em;    /* letter-spacing des kickers uppercase */
+
+  /* ---------- Animations (budget strict) ---------- */
+  --anim-pulse: 2000ms;  /* durée de pulsation (pastille active, jauge HUD en critique) */
+}
+
+/* ============================================================
+   Base — règles minimales portées par les tokens
+   ============================================================ */
+
+/* Tabular-nums OBLIGATOIRE sur toute valeur qui se rafraîchit,
+   sinon % et countdown tressautent à chaque tick. */
+.num,
+.display-value,
+.countdown {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: var(--fs-kicker);
+  text-transform: uppercase;
+  letter-spacing: var(--kicker-ls);
+  color: var(--accent);
+}
+
+/* Numérotation "[ 01 ] //" : corps en --mute, seul le "//" en terracotta */
+.entry-num       { font-family: var(--font-mono); font-size: var(--fs-kicker); color: var(--mute); }
+.entry-num .slash { color: var(--accent); }
+
+/* Filet double éditorial (sous le masthead, têtes de section étendues) */
+.rule-double {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  height: 4px; /* 1px + 2px d'écart + 1px */
+}
+
+/* États de seuil — appliqués sur la bande provider (.band) */
+.band[data-state="ok"]   { --bar-fill: var(--state-ok);   --countdown-color: var(--ink); }
+.band[data-state="warn"] { --bar-fill: var(--state-warn); --countdown-color: var(--state-warn); }
+.band[data-state="crit"] { --bar-fill: var(--state-crit); --countdown-color: var(--state-crit); }
+.band[data-state="crit"] .display-value { color: var(--state-crit); }
+
+/* État stale — dévitalisation, pas de badge */
+.band[data-stale="true"] {
+  opacity: var(--stale-block-opacity);
+}
+.band[data-stale="true"] .display-value,
+.band[data-stale="true"] .countdown { color: var(--stale-fg); }
+.band[data-stale="true"] .bar-fill  { opacity: var(--stale-bar-opacity); }
+
+/* Pulsation de la pastille active */
+@keyframes vigie-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+.dot-active { animation: vigie-pulse var(--anim-pulse) ease-in-out infinite; }
+
+/* Respect de prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .dot-active { animation: none; }
+}
+
+/* ============================================================
+   VIGIE — thème SOMBRE
+   Vrai thème sombre : fond encre profonde, texte crème, accents
+   terracotta/vert ÉCLAIRCIS pour tenir AA sur #0A0A0B.
+
+   Activation : data-theme="dark" posé sur <html> par le widget
+   (persisté). Le bloc @media couvre le mode "auto" (valeur par
+   défaut) : il s'applique tant que l'utilisateur n'a pas choisi
+   explicitement (data-theme="light" le neutralise).
+   ============================================================ */
+
+:root[data-theme="dark"] {
+  color-scheme: dark; /* scrollbars / contrôles natifs cohérents */
+
+  /* ---------- Palette recalibrée pour le sombre ---------- */
+  --bg:        #0A0A0B;  /* encre profonde — fond du thème sombre */
+  --surface:   #171512;  /* charbon CHAUD (pas de gris froid) — heatmap base, hover, liste agents */
+  --ink:       #F5F1EA;  /* crème — l'ivoire clair devient le texte principal (≈17.6:1) */
+  --mute:      #A79D8F;  /* gris chaud ÉCLAIRCI — le #6B6359 clair ne tient que 3.3:1 ici (≈7.4:1) */
+  --line:      #33302A;  /* filets/hairlines — brun sombre chaud, discret mais visible sur l'encre */
+  --accent:    #D97250;  /* terracotta ÉCLAIRCIE — #C75D3A plafonne à 4.7:1, celle-ci ≈5.9:1 */
+  --accent-2:  #6FA287;  /* vert forêt ÉCLAIRCI (sauge) — #2A4A3A est illisible (≈2:1), celui-ci ≈6.8:1 */
+
+  /* ---------- Seuils recalibrés ---------- */
+  --state-ok:   var(--accent-2);
+  --state-warn: var(--accent);
+  /* Critique : rouge brique ÉCLAIRCI, même température que la terracotta,
+     mais tiré vers le rouge pour rester distinct du warning (≈5.1:1 texte). */
+  --state-crit: #E0523F;
+
+  /* ---------- Stale — dévitalisation sur fond sombre ---------- */
+  --stale-fg:            var(--mute);
+  --stale-bar-opacity:   0.45; /* 0.35 disparaissait sur l'encre — remonté pour rester perceptible */
+  --stale-block-opacity: 0.75; /* léger renfort du retrait (0.8 en clair) */
+
+  /* ---------- Barres de quota ---------- */
+  --bar-track: var(--line);
+  --bar-tick:  var(--mute); /* encoches 70/90 % — opacité 0.5 à l'usage, lisible via --mute éclairci */
+  /* hauteurs inchangées : --bar-h / --bar-h-crit / --bar-h-secondary héritent du clair */
+
+  /* ---------- Pastille statut ---------- */
+  --dot-active: var(--accent-2);
+  --dot-idle:   var(--mute);
+
+  /* ---------- Heatmap 30 j — rampe chaude SUR SOMBRE ---------- */
+  /* Progression lumière croissante (le jour chargé ÉCLAIRE la grille),
+     intensité ≠ statut → toujours pas de vert. Cellules non-texte : 3:1 suffit. */
+  --heat-0: var(--surface);    /* jour vide — charbon chaud */
+  --heat-1: #4A3A2E;           /* brun sable sombre */
+  --heat-2: #8F5539;           /* terracotta enfumée */
+  --heat-3: var(--accent);     /* terracotta pleine (éclaircie) */
+  --heat-4: var(--state-crit); /* jours extrêmes */
+
+  /* ---------- Sparkline 24 h ---------- */
+  --spark-stroke: var(--ink);    /* trait crème 1.5px */
+  --spark-dot:    var(--accent);
+  --spark-base:   var(--line);
+
+  /* Géométrie, espacements, typo, letter-spacing, animations :
+     AUCUNE redéfinition — ils héritent du :root clair, seuls les
+     tokens de couleur/opacité changent. */
+}
+
+/* ---------- Mode "auto" (thème par défaut, suit l'OS) ----------
+   Bloc IDENTIQUE au précédent (le CSS ne permet pas de partager un bloc
+   entre un attribut et une media query sans préprocesseur).
+   data-theme="light" posé par l'utilisateur reprend la main. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0A0A0B;  --surface: #171512;  --ink: #F5F1EA;
+    --mute: #A79D8F;  --line: #33302A;
+    --accent: #D97250;  --accent-2: #6FA287;
+    --state-ok: var(--accent-2);  --state-warn: var(--accent);  --state-crit: #E0523F;
+    --stale-fg: var(--mute);  --stale-bar-opacity: 0.45;  --stale-block-opacity: 0.75;
+    --bar-track: var(--line);  --bar-tick: var(--mute);
+    --dot-active: var(--accent-2);  --dot-idle: var(--mute);
+    --heat-0: var(--surface);  --heat-1: #4A3A2E;  --heat-2: #8F5539;
+    --heat-3: var(--accent);   --heat-4: var(--state-crit);
+    --spark-stroke: var(--ink);  --spark-dot: var(--accent);  --spark-base: var(--line);
+  }
+}
+
+/* Pastille idle ○ : le contour 1px --mute suffit (7.4:1), rien à changer. */

@@ -1,0 +1,267 @@
+/* ============================================================
+   Vigie — fenêtre Réglages (420×580, décorée, opaque)
+   Même feuille de tokens que le widget (theme.css) : crème,
+   kickers mono terracotta, filets --line, zéro ombre lourde.
+   body est overflow:hidden (App.css) → c'est .settings qui défile.
+   ============================================================ */
+
+.settings {
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.set-page {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: var(--sp-5) var(--sp-6) var(--sp-6);
+  display: flex;
+  flex-direction: column;
+}
+
+.set-loading {
+  padding: var(--sp-6);
+}
+
+/* ---------- Masthead ---------- */
+.set-masthead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-3);
+}
+.set-masthead-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+.settings .rule-double {
+  flex: none;
+}
+
+/* ---------- Sections ---------- */
+.set-section {
+  padding: var(--sp-5) 0;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.set-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+.set-section-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: var(--fs-title-exp);
+  color: var(--ink);
+}
+
+/* ---------- Lignes label + contrôle ---------- */
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  min-height: 24px;
+}
+.set-row-label {
+  font-size: 12px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.set-row-note {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--mute);
+}
+.set-note {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--mute);
+}
+
+/* ---------- Champs numériques (mono, filet bas — pas de chrome lourd) ---------- */
+.set-input {
+  width: 52px;
+  padding: var(--sp-1) var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  text-align: right;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+.set-input:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+.set-input-wide {
+  width: 72px;
+}
+/* Spinners natifs discrets : on les masque, la saisie mono suffit. */
+.set-input::-webkit-outer-spin-button,
+.set-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ---------- Sélecteurs (skin / thème) — même langage que les inputs ---------- */
+.set-select {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: var(--sp-1) var(--sp-2);
+  cursor: pointer;
+}
+.set-select:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+.set-thresholds {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-5);
+}
+.set-threshold {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+}
+.set-unit {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--mute);
+}
+
+/* ---------- Toggle (pill fine, vert forêt actif) ---------- */
+.set-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 30px;
+  height: 16px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+  position: relative;
+  cursor: pointer;
+  transition: background 150ms ease;
+  margin: 0;
+}
+.set-switch::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bg);
+  transition: transform 150ms ease;
+}
+.set-switch:checked {
+  background: var(--accent-2);
+}
+.set-switch:checked::before {
+  transform: translateX(14px);
+}
+.set-switch:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Slider opacité ---------- */
+.set-slider-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.set-slider {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 110px;
+  height: var(--bar-h);
+  border-radius: var(--radius-pill);
+  background: var(--line);
+  cursor: pointer;
+  margin: 0;
+}
+.set-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+}
+.set-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+}
+.set-slider-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-countdown);
+  color: var(--mute);
+  min-width: 34px;
+  text-align: right;
+}
+
+/* ---------- Pied : feedback + bouton ---------- */
+.set-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-4);
+  padding-top: var(--sp-5);
+}
+/* Double sélecteur OBLIGATOIRE : theme.css sort APRÈS cette feuille dans le
+   bundle (cf. gotcha .kicker.kicker-mute d'App.css) — (0,2,0) garantit le
+   vert forêt sur le feedback quel que soit l'ordre des feuilles. */
+.set-footer .set-saved {
+  color: var(--accent-2);
+  transition: opacity 300ms ease;
+}
+.set-footer .set-saved-hidden {
+  opacity: 0;
+}
+.set-save {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: var(--kicker-ls);
+  color: var(--bg);
+  background: var(--ink);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3) var(--sp-5);
+  cursor: pointer;
+}
+.set-save:hover {
+  background: var(--accent);
+}
+.set-save:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}

@@ -1,0 +1,62 @@
+.brand { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-family: var(--font-display); font-weight: 650; letter-spacing: -.04em; }
+.brand img { width: 27px; height: 27px; }
+.masthead .brand { font-size: 12px; }
+.masthead .brand img { width: 20px; height: 20px; }
+.brand[data-active="true"] img { animation: beacon-breathe 3s ease-in-out infinite; }
+.ctl-sessions { display: inline-flex; gap: 3px; align-items: center; width: auto; font: 10px var(--font-mono); color: var(--accent-2); }
+.sessions-page { box-sizing: border-box; height: 100%; padding: 25px 24px 20px; background: var(--bg); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.sessions-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sessions-header .brand { font-size: 24px; }
+.sessions-header .brand img { width: 38px; height: 38px; }
+.live-tag { display: flex; align-items: center; gap: 6px; color: var(--mute); font: 10px var(--font-mono); }
+.sessions-intro { margin: 27px 0 21px; }
+.sessions-intro h1 { margin: 8px 0; font: 500 31px/1.1 var(--font-display); letter-spacing: -.045em; }
+.sessions-intro h1 .num { color: var(--accent-2); }
+.sessions-intro p { margin: 0; font-size: 12px; color: var(--mute); }
+.sessions-quotas { display: flex; gap: 8px; margin-bottom: 23px; }
+.session-quota { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid var(--line); padding: 11px 12px; border-radius: 10px; font-size: 11px; }
+.session-quota strong { font: 500 12px var(--font-mono); }
+.session-filters { display: flex; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 9px; margin-bottom: 14px; }
+.session-filters button, .quiet-button { font-family: var(--font-sans); border: 0; background: transparent; color: var(--mute); padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 11px; transition: background 160ms, color 160ms, transform 180ms; }
+.session-filters button:hover, .quiet-button:hover { background: var(--surface); color: var(--ink); }
+.session-filters button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; }
+.session-filters button:focus-visible, .quiet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.session-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; }
+.session-card { border: 1px solid var(--line); border-radius: 12px; padding: 13px; animation: state-enter 260ms cubic-bezier(.2,.8,.2,1) both; transition: border-color 300ms, background 300ms, transform 200ms; }
+.session-card[data-active="true"] { border-color: color-mix(in srgb, var(--accent-2) 35%, var(--line)); background: color-mix(in srgb, var(--accent-2) 3%, var(--bg)); }
+.session-card:hover { transform: translateY(-1px); }
+.session-card-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.session-provider { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 9px; background: var(--surface); color: var(--accent); font: 600 13px var(--font-mono); }
+.session-provider.codex { color: var(--accent-2); }
+.session-project { min-width: 0; flex: 1; }
+.session-project h2 { margin: 0 0 4px; font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-project > span { display: block; font: 9px var(--font-mono); color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-status { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--mute); flex: none; }
+.session-card[data-active="true"] .session-status { color: var(--accent-2); }
+.session-meta { display: flex; justify-content: space-between; gap: 8px; padding-left: 40px; margin-top: 12px; color: var(--mute); font-size: 9px; }
+.sessions-empty { text-align: center; padding: 22px 12px; }
+.sessions-empty img { width: 54px; height: 54px; opacity: .65; }
+.sessions-empty h2 { font: 500 20px var(--font-display); letter-spacing: -.025em; }
+.sessions-empty p { font-size: 12px; line-height: 1.6; color: var(--mute); max-width: 260px; margin: auto; }
+.sessions-footer { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 10px; }
+.sessions-footer p { font-size: 10px; color: var(--mute); line-height: 1.6; margin: 4px 0 8px; }
+.sessions-footer .quiet-button { padding-left: 0; color: var(--accent); }
+.inline-error, .provider-notice { color: var(--state-crit); font: 11px/1.5 var(--font-sans); }
+.widget-error { position: absolute; z-index: 3; bottom: 3px; left: 12px; right: 12px; background: var(--bg); color: var(--state-crit); font-size: 10px; }
+.hud-empty { color: var(--mute); cursor: pointer; justify-content: space-between; }
+.hud-model { animation: state-enter 240ms ease-out; }
+.hud-active-count { font: 9px var(--font-mono); color: var(--accent-2); }
+.vigie-window { animation: view-enter 200ms ease-out; }
+.bar-fill, .hud-gauge-fill { transition: width 700ms cubic-bezier(.16,1,.3,1), background-color 400ms ease; }
+.band, .hud-line, .dot, .display-value, .countdown { transition: color 300ms, background-color 300ms, opacity 300ms, border-color 300ms; }
+.dot-active { animation: beacon-breathe 2.8s ease-in-out infinite; }
+.exp-scroll { overflow-y: auto; scrollbar-width: thin; }
+@keyframes state-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes view-enter { from { opacity: .75; } to { opacity: 1; } }
+@keyframes beacon-breathe { 0%,100% { opacity: .6; } 50% { opacity: 1; } }
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media (max-width: 380px) { .sessions-page { padding: 18px 14px; } .sessions-intro h1 { font-size: 28px; } .session-status { font-size: 9px; } }
+.demo-widget { margin: 30px auto; width: 320px; height: 180px; }
+:root[data-view="expanded"] .demo-widget { width: 420px; height: 620px; }
+:root[data-view="hud"] .demo-widget { width: 232px; height: 34px; }

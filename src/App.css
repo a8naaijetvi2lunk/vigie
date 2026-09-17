@@ -1,0 +1,842 @@
+/* ============================================================
+   Vigie — fenêtre compacte 320×180, fond transparent obligatoire
+   pour laisser passer la transparence native de la fenêtre Tauri.
+
+   Rythme vertical (tokens theme.css) :
+   - chrome fixe : masthead 14px + filet double (4px + 2×--sp-1)
+     + filet simple inter-bandes (1px + 2×--sp-1) ;
+   - chaque bande : flex 1 1 auto, contenu empilé au pas --sp-1,
+     le reliquat se distribue également entre les deux bandes
+     (centrage vertical symétrique) → mêmes gaps pour les
+     éléments équivalents des deux bandes.
+
+   ⚠ Ordre de cascade : main.tsx importe App (→ App.css) AVANT
+   theme.css — les règles de theme.css sortent donc APRÈS celles-ci
+   dans le bundle. À spécificité égale, theme.css gagne.
+   ============================================================ */
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* Le wrapper suit la taille de la fenêtre native (pilotée par set_view côté
+   Rust) : 320×180 en compact, 420×620 en étendu.
+   Opacité pilotée par la config (--widget-opacity posée sur :root par
+   CompactCard) — jamais utilisée côté fenêtre settings. */
+.widget {
+  width: 100%;
+  height: 100%;
+  opacity: var(--widget-opacity, 1);
+}
+
+/* ---------- Fenêtre flottante (chrome commun) ----------
+   Un seul bord net (border 1px --line) : pas de box-shadow CSS en plus
+   de l'ombre OS déjà désactivée ("shadow": false côté tauri.conf.json)
+   pour éviter le halo/double-rebord sur la fenêtre transparente. */
+.vigie-window {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-sizing: border-box;
+}
+
+.drag-handle {
+  position: absolute;
+  top: var(--sp-2);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+  cursor: grab;
+}
+
+.masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 14px;
+  flex: none;
+  cursor: grab;
+  user-select: none;
+}
+.masthead:active {
+  cursor: grabbing;
+}
+/* Tauri 2 : le drag ne se déclenche que si l'élément SOUS le curseur porte
+   data-tauri-drag-region. On neutralise le pointeur des enfants (texte "Vigie")
+   pour que tout le masthead reste une zone de drag. */
+.masthead > * {
+  pointer-events: none;
+}
+
+/* ---------- Widget compact 320 × 180 ---------- */
+.compact {
+  width: 320px;
+  height: 180px;
+  padding: var(--pad-window-y) var(--pad-window-x);
+  display: flex;
+  flex-direction: column;
+}
+.compact .rule-double {
+  margin: var(--sp-1) 0;
+  flex: none;
+}
+
+.rule-single {
+  border-top: 1px solid var(--line);
+  margin: var(--sp-1) 0;
+  flex: none;
+}
+
+/* ---------- Bande provider ----------
+   Base auto + grow : chaque bande occupe son contenu, le reliquat
+   de hauteur se répartit également → respiration identique
+   au-dessus/au-dessous du contenu des deux bandes. */
+.band {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  row-gap: var(--sp-1);
+}
+
+.band-id {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 12px;
+  flex: none;
+}
+.band-id .spacer {
+  flex: 1;
+}
+
+.prefix {
+  font-family: var(--font-mono);
+  font-size: var(--fs-prefix);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ---------- Fenêtre primaire : gros %, countdown, barre pleine largeur ---------- */
+.band-display {
+  display: flex;
+  align-items: baseline;
+}
+.display-value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-display);
+  line-height: 0.9; /* chiffres seuls (pas de jambage) — compacte la rangée dans les 180px */
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.unit {
+  font-size: var(--fs-unit);
+  font-weight: 500;
+  color: var(--mute);
+  margin-left: var(--sp-1);
+}
+.countdown {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-countdown);
+  color: var(--countdown-color, var(--ink));
+}
+.band[data-state="crit"] .countdown {
+  font-weight: 500;
+}
+.countdown-mute {
+  color: var(--mute);
+}
+/* Double classe OBLIGATOIRE : theme.css est importé APRÈS App.css
+   (main.tsx importe App → App.css avant theme.css), donc son
+   `.kicker { color: var(--accent) }` gagnerait à spécificité égale.
+   `.kicker.kicker-mute` (0,2,0) garantit le muted du stamp stale
+   et du "rate-limited" quel que soit l'ordre des feuilles. */
+.kicker.kicker-mute {
+  color: var(--mute);
+}
+
+/* ---------- Barres ---------- */
+.bar {
+  position: relative;
+  background: var(--bar-track);
+}
+.bar-primary {
+  height: var(--bar-h);
+  width: 100%;
+  flex: none;
+}
+.band[data-state="crit"] .bar-primary {
+  height: var(--bar-h-crit);
+}
+.bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: block;
+  background: var(--bar-fill, var(--state-ok));
+}
+.bar-fill.f-ok {
+  background: var(--state-ok);
+}
+.bar-fill.f-warn {
+  background: var(--state-warn);
+}
+.bar-fill.f-crit {
+  background: var(--state-crit);
+}
+.tick {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 1px;
+  background: var(--bar-tick);
+  opacity: 0.5;
+}
+.t70 {
+  left: 70%;
+}
+.t90 {
+  left: 90%;
+}
+
+/* ---------- Fenêtres secondaires : label mono + mini-barre + méta ---------- */
+.band-secondary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 10px;
+  flex: none;
+}
+.wk-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--kicker-ls);
+  color: var(--mute);
+}
+.bar-mini {
+  width: 80px;
+  height: var(--bar-h-secondary);
+  flex: none;
+}
+.wk-meta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--mute);
+}
+
+/* ---------- Pastilles statut ---------- */
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  display: inline-block;
+}
+.dot-active {
+  background: var(--dot-active);
+}
+.dot-idle {
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--dot-idle);
+  background: transparent;
+}
+
+/* Seuils de bande : --bar-fill / --countdown-color et la teinte crit
+   du display-value sont définis UNE SEULE FOIS dans theme.css
+   (.band[data-state=…], lignes "États de seuil"). Ne pas les
+   redéclarer ici — risque de divergence entre les deux feuilles. */
+
+/* ============================================================
+   Mode étendu 420×620 — clic sur une bande provider.
+   620px de haut : TOUT le contenu (cas Claude 3 fenêtres) tient
+   sans scroll — têtes de section à 14px et heatmap 9px compensent.
+   ============================================================ */
+
+/* Bande compacte cliquable → mode étendu */
+.band-clickable {
+  cursor: pointer;
+}
+.band-clickable:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.expanded {
+  width: 100%;
+  height: 100%;
+  padding: 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.expanded .rule-double {
+  flex: none;
+}
+.expanded .masthead + .rule-double {
+  margin-top: var(--sp-2);
+}
+
+/* Bouton retour — seul enfant interactif du masthead (le `.masthead > *`
+   à pointer-events:none neutralise le reste pour le drag). */
+.masthead .back-btn {
+  pointer-events: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--fs-kicker);
+  text-transform: uppercase;
+  letter-spacing: var(--kicker-ls);
+  color: var(--mute);
+}
+.masthead .back-btn:hover,
+.masthead .back-btn:focus-visible {
+  color: var(--accent);
+}
+
+/* Contenu sous le masthead fixe : la fenêtre principale 420×620 est à taille
+   fixe, sans scroll. Le reliquat de hauteur (ex. Codex, 1 fenêtre) reste en
+   bas, contenu ancré en haut. */
+.exp-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Têtes de section "[ 0n ] // Label" */
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 14px 0 var(--sp-2);
+}
+.exp-scroll > .sec-head:first-child {
+  margin-top: var(--sp-3);
+}
+.sec-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-kicker);
+  text-transform: uppercase;
+  letter-spacing: var(--kicker-ls);
+  color: var(--accent);
+}
+.sec-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sec-kind {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--kicker-ls);
+  color: var(--mute);
+}
+
+/* Grand pourcentage + heure exacte de reset */
+.exp-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-display-exp);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-top: var(--sp-4);
+  color: var(--ink);
+}
+.exp-display .unit {
+  font-size: 20px;
+}
+.exp-reset {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mute);
+  margin-top: 5px;
+}
+
+/* Pile de barres — une rangée par fenêtre présente */
+.stack-bars {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sb-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mute);
+  width: 72px;
+  flex: none;
+}
+.sb-row .bar {
+  flex: 1;
+  height: var(--bar-h);
+}
+.sb-val {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--mute);
+  width: 128px;
+  text-align: right;
+  flex: none;
+}
+
+/* Sparkline 24h */
+.spark-wrap {
+  position: relative;
+  margin-top: var(--sp-4);
+}
+.spark-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Heatmap 30j — cellules 9×9, radius 2, gap 3 (compactée de 10px pour le
+   budget vertical sans-scroll de 620px) */
+.heatmap {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  align-items: flex-start;
+}
+.hm-days {
+  display: grid;
+  grid-template-rows: repeat(7, 9px);
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--mute);
+  line-height: 9px;
+}
+.hm-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 9px);
+  grid-auto-flow: column;
+  grid-auto-columns: 9px;
+  gap: 3px;
+}
+.hm-grid i,
+.hm-legend i {
+  display: block;
+  border-radius: 2px;
+}
+.hm-grid i {
+  width: 9px;
+  height: 9px;
+}
+.hm-pad {
+  background: transparent;
+}
+.h0 { background: var(--heat-0); }
+.h1 { background: var(--heat-1); }
+.h2 { background: var(--heat-2); }
+.h3 { background: var(--heat-3); }
+.h4 { background: var(--heat-4); }
+.today {
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.hm-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--mute);
+}
+.hm-legend i {
+  width: 8px;
+  height: 8px;
+}
+.hm-legend span {
+  margin: 0 3px;
+}
+
+/* Ligne activité */
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.activity-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--ink);
+}
+.activity-stale {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--mute);
+}
+
+/* États vides (pas d'historique / chargement / en attente) */
+.exp-empty {
+  margin: var(--sp-4) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--mute);
+}
+
+/* Stale : même dévitalisation qu'en compact, appliquée à la vue entière */
+.expanded[data-stale="true"] .exp-display,
+.expanded[data-stale="true"] .exp-reset {
+  color: var(--stale-fg);
+}
+.expanded[data-stale="true"] .bar-fill {
+  opacity: var(--stale-bar-opacity);
+}
+
+/* ============================================================
+   Chrome du masthead : quatre boutons (sessions, skin, thème, HUD).
+   Révélées au survol de la fenêtre ENTIÈRE et au focus clavier
+   (jamais invisibles au clavier).
+   ============================================================ */
+.masthead .chrome {
+  /* Réactive le clic malgré `.masthead > * { pointer-events: none }`
+     (spécificité 0,2,0 > 0,1,0) — même mécanique que .back-btn. */
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.vigie-window:hover .chrome,
+.vigie-window:focus-within .chrome {
+  opacity: 1;
+}
+.ctl {
+  width: 20px;
+  height: 20px; /* zone cliquable 20×20, glyphe 9px centré */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--mute);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+}
+.ctl:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.ctl:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+.ctl .glyph {
+  display: inline-block;
+}
+/* Glyphe skin : affiche l'état COURANT — ▲ instrument / ¶ éditorial */
+.ctl-skin .glyph::before {
+  content: "▲";
+  font-size: 8px;
+}
+:root[data-skin="carnet"] .ctl-skin .glyph::before {
+  content: "¶";
+  font-size: 10px;
+}
+/* Glyphe thème ◐ : rotation 180deg 200ms pour marquer l'inversion.
+   En "auto" (pas de data-theme), le @media de secours suit l'OS. */
+.ctl-theme .glyph {
+  transition: transform 200ms ease;
+}
+:root[data-theme="dark"] .ctl-theme .glyph {
+  transform: rotate(180deg);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ctl-theme .glyph {
+    transform: rotate(180deg);
+  }
+}
+
+/* Glyphe HUD ▭ : la ligne unique, réduite à sa silhouette. */
+.ctl-hud .glyph::before {
+  content: "▭";
+  font-size: 10px;
+}
+
+/* ---------- Ajustement structurel sombre ----------
+   Sur l'encre profonde, le filet --line peut se perdre contre un bureau
+   sombre → liseré interne crème très faible. INSET uniquement : ne
+   recrée pas de halo externe. */
+:root[data-theme="dark"] .vigie-window {
+  box-shadow: inset 0 0 0 1px rgb(245 241 234 / 0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .vigie-window {
+    box-shadow: inset 0 0 0 1px rgb(245 241 234 / 0.04);
+  }
+}
+
+/* ============================================================
+   Axe SKIN — visibilité conditionnelle des fragments.
+   .alt-only n'existe qu'en Altimètre, .carnet-only qu'en Carnet.
+   ============================================================ */
+:root:not([data-skin="carnet"]) .carnet-only {
+  display: none !important;
+}
+:root[data-skin="carnet"] .alt-only {
+  display: none !important;
+}
+
+/* ============================================================
+   SKIN « CARNET DE VEILLE » — couche de PRÉSENTATION pure.
+   Même markup, mêmes données, mêmes attributs d'état
+   (.band[data-state], [data-stale]) : seul le dessin change.
+   Piloté par data-skin="carnet" sur <html> — valable tel quel
+   en clair ET en sombre (tout passe par tokens).
+   ============================================================ */
+
+/* 1 · Structure aux filets — respiration accrue, aucun aplat en compact */
+:root[data-skin="carnet"] .masthead {
+  height: 12px;
+}
+:root[data-skin="carnet"] .compact .rule-double {
+  margin: 5px 0 4px;
+}
+:root[data-skin="carnet"] .rule-single {
+  margin: 8px 0;
+}
+
+/* 3 · Pourcentage-lettrine : Inter Tight ITALIC 600, 22px compact.
+   tabular-nums + "tnum" hérités de .display-value (obligatoires). */
+:root[data-skin="carnet"] .compact .display-value {
+  font-size: 22px;
+  font-style: italic;
+  letter-spacing: -0.005em;
+}
+:root[data-skin="carnet"] .display-value .unit {
+  font-size: 60%;
+  position: relative;
+  top: -0.4em;
+  margin-left: 1px;
+}
+:root[data-skin="carnet"] .band[data-state="warn"] .display-value {
+  color: var(--state-warn);
+}
+:root[data-skin="carnet"] .band[data-stale="true"] .display-value {
+  color: var(--stale-fg);
+}
+
+/* 4 · Métriques compact carnet */
+:root[data-skin="carnet"] .prefix {
+  font-size: 11px;
+}
+:root[data-skin="carnet"] .countdown {
+  font-size: 9px;
+}
+:root[data-skin="carnet"] .bar-primary {
+  height: 2px;
+}
+:root[data-skin="carnet"] .band[data-state="crit"] .bar-primary {
+  height: var(--bar-h-crit);
+}
+:root[data-skin="carnet"] .bar-mini {
+  width: 110px;
+}
+/* Kicker « 5H » quitte la ligne méta pour la ligne display, en --mute
+   (discipline terracotta : l'accent reste une valeur d'alerte).
+   :not(.kicker-mute) préserve les stamps stale / rate-limited. */
+:root[data-skin="carnet"] .band-id > .kicker:not(.kicker-mute) {
+  display: none;
+}
+.kicker-5h {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mute);
+  margin-left: 6px;
+}
+:root[data-skin="carnet"] .band[data-state="warn"] .kicker-5h {
+  color: var(--state-warn);
+}
+/* Pastille poussée à droite de la ligne méta */
+:root[data-skin="carnet"] .band-id .dot {
+  order: 9;
+}
+
+/* 5 · Caveat critique « ça chauffe ! » — 14px --state-crit -2deg, glissée
+   dans la première rangée secondaire à la place du label (une Caveat par
+   vue MAXIMUM, budget 320×180 tenu : micro-barre et méta intactes). */
+.caveat-crit {
+  font-family: var(--font-hand);
+  font-size: 14px;
+  color: var(--state-crit);
+  display: inline-block;
+  line-height: 1;
+  flex: none;
+  transform: rotate(-2deg);
+  margin-top: -2px;
+  white-space: nowrap;
+}
+:root[data-skin="carnet"] .caveat-crit + .wk-label {
+  display: none;
+}
+
+/* 6 · Mode étendu carnet = « l'article » du sommaire compact */
+:root[data-skin="carnet"] .exp-display {
+  font-size: 40px;
+  font-style: italic;
+}
+:root[data-skin="carnet"] .exp-display .unit {
+  font-size: 60%;
+  position: relative;
+  top: -0.4em;
+}
+
+/* ---------- prefers-reduced-motion : budget animation à zéro ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .masthead .chrome,
+  .ctl-theme .glyph {
+    transition: none;
+  }
+}
+
+/* ---------- Mode HUD (une ligne, 232×34, ancré dans un coin) ----------
+   Réutilise .vigie-window pour le fond, la bordure et le liseré interne du
+   thème sombre. Ligne entièrement cliquable : c'est le seul moyen de sortie
+   côté fenêtre (le tray reste le filet de sécurité si clickThrough est actif). */
+.hud-line {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-4);
+  box-sizing: border-box;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--fs-countdown);
+  line-height: 1;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.hud-line:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -2px;
+}
+.hud-spacer {
+  flex: 1 1 auto;
+}
+.hud-model {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-pct {
+  font-weight: 600;
+}
+.hud-reset,
+.hud-wait {
+  color: var(--mute);
+}
+/* Teinte du pourcentage par seuil — tokens d'état de theme.css, jamais de dur. */
+.hud-line[data-state="ok"] .hud-pct {
+  color: var(--state-ok);
+}
+.hud-line[data-state="warn"] .hud-pct {
+  color: var(--state-warn);
+}
+.hud-line[data-state="crit"] .hud-pct {
+  color: var(--state-crit);
+}
+/* Donnée périmée : mise en retrait, même sémantique que la bande compacte. */
+.hud-line[data-stale="true"] {
+  opacity: var(--stale-block-opacity);
+}
+.hud-line[data-stale="true"] .hud-pct {
+  color: var(--stale-fg);
+}
+
+/* ---------- Jauge de pied du HUD ----------
+   Position absolue dans `.vigie-window` : aucune hauteur ajoutée à la ligne.
+   Pulsation en état critique ; `prefers-reduced-motion` coupe tout. */
+.hud-gauge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--bar-track);
+  border-bottom-left-radius: var(--radius-sm);
+  border-bottom-right-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.hud-gauge-fill {
+  display: block;
+  height: 100%;
+  transform-origin: left center;
+  transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  animation: hud-gauge-in 700ms cubic-bezier(0.4, 0, 0.2, 1) 1;
+}
+@keyframes hud-gauge-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.hud-line[data-state="ok"] .hud-gauge-fill {
+  background: var(--state-ok);
+}
+.hud-line[data-state="warn"] .hud-gauge-fill {
+  background: var(--state-warn);
+}
+.hud-line[data-state="crit"] .hud-gauge-fill {
+  background: var(--state-crit);
+  animation:
+    hud-gauge-in 700ms cubic-bezier(0.4, 0, 0.2, 1) 1,
+    vigie-pulse var(--anim-pulse) ease-in-out infinite;
+}
+/* Donnée périmée : la jauge se dévitalise comme les barres du mode compact. */
+.hud-line[data-stale="true"] .hud-gauge-fill {
+  opacity: var(--stale-bar-opacity);
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-gauge-fill {
+    animation: none;
+    transition: none;
+  }
+}
